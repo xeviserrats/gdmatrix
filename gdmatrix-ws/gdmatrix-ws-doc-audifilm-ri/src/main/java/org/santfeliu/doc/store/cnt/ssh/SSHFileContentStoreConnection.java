@@ -220,8 +220,7 @@ public class SSHFileContentStoreConnection extends OracleContentStoreConnection 
 						+ "WHERE c.uuid = i.uuid (+) and c.uuid = e.uuid (+) and c.uuid = ?";
 
 		try (ConnSSH wConnSSH = new ConnSSH();
-			PreparedStatement prepStmt = conn.prepareStatement(sql);
-			ResultSet rs = prepStmt.executeQuery())
+			PreparedStatement prepStmt = conn.prepareStatement(sql))
 		{
 			InfoModeSSH wSSH = ConnSSH.getInfoModeSSH(conn);
 			wConnSSH.init(wSSH.servidor, wSSH.usuari, wSSH.contrasenya, wSSH.dirBase);
@@ -230,34 +229,37 @@ public class SSHFileContentStoreConnection extends OracleContentStoreConnection 
 
 			prepStmt.setString(1, contentId);
 
-			if (rs.next()) 
+			try (ResultSet rs = prepStmt.executeQuery())
 			{
-				content = new Content();
-				String fileType = rs.getString(2);
-				content.setContentId(rs.getString(1));
-				if (!ContentInfo.ID.equals(contentInfo)) 
+				if (rs.next()) 
 				{
-					content.setContentType(rs.getString(3));
-					content.setFormatId(rs.getString(4));
-					content.setLanguage(rs.getString(5));
-					content.setCaptureUserId(rs.getString(6));
-					content.setCaptureDateTime(rs.getString(7));
-					content.setSize(new Long(rs.getLong(8)));
-					if (INTERNAL.equals(fileType)) 
+					content = new Content();
+					String fileType = rs.getString(2);
+					content.setContentId(rs.getString(1));
+					if (!ContentInfo.ID.equals(contentInfo)) 
 					{
-						if (ContentInfo.ALL.equals(contentInfo)) {
-							String wRemoteDir = wConnSSH.getDirectoriByIdNReg(conn, content.getContentId());
-							String wRemoteFile = wRemoteDir + "/" + wConnSSH.getFileName(content.getContentId());
+						content.setContentType(rs.getString(3));
+						content.setFormatId(rs.getString(4));
+						content.setLanguage(rs.getString(5));
+						content.setCaptureUserId(rs.getString(6));
+						content.setCaptureDateTime(rs.getString(7));
+						content.setSize(new Long(rs.getLong(8)));
+						if (INTERNAL.equals(fileType)) 
+						{
+							if (ContentInfo.ALL.equals(contentInfo)) {
+								String wRemoteDir = wConnSSH.getDirectoriByIdNReg(conn, content.getContentId());
+								String wRemoteFile = wRemoteDir + "/" + wConnSSH.getFileName(content.getContentId());
 
-							wConnSSH.get(wRemoteFile, wFileGetDocument);
+								wConnSSH.get(wRemoteFile, wFileGetDocument);
 
-							DataHandler dh = new DataHandler(
-									new TemporaryDataSource(wFileGetDocument, content.getContentType()));
-							content.setData(dh);
-						}
-					} else if (EXTERNAL.equals(fileType))
-						if (!ContentInfo.ID.equals(contentInfo))
-							content.setUrl(rs.getString(10));
+								DataHandler dh = new DataHandler(
+										new TemporaryDataSource(wFileGetDocument, content.getContentType()));
+								content.setData(dh);
+							}
+						} else if (EXTERNAL.equals(fileType))
+							if (!ContentInfo.ID.equals(contentInfo))
+								content.setUrl(rs.getString(10));
+					}
 				}
 			}
 		}
