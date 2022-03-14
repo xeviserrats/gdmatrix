@@ -2,6 +2,7 @@ package org.santfeliu.doc.store.cnt.ssh.utils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -20,7 +21,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 
-public class ConnSSH 
+public class ConnSSH implements Closeable
 {
 	private static final Logger log = Logger.getLogger(ConnSSH.class.getName());
 	
@@ -319,7 +320,7 @@ public class ConnSSH
     	}
     }
     
-    public void close()
+    public void close() throws IOException
     {
     	try
     	{
